@@ -5,6 +5,7 @@ Marker genes cluster and new gene expression behavior analysis
 1. remove the genes that expressed in all cells
 2. remove the genes that didn't express in any cells
 3. remove the genes that expressed in wrong clusters
+
 ***Note:*** delete the non-specific genes and wrong genes
 ***
 
