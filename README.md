@@ -10,7 +10,8 @@ Marker genes cluster and new gene expression behavior analysis
 
 ## Plot the heatmap to decide clusters
 ```
-pheatmap(objective, parameters)
+pheatmap(objective,treeheight_col = 30,treeheight_row = 0,show_colnames = F,clustering_method="ward.D",
+           color = colorRampPalette(c("green", "black", "red"))(50),annotation_col = annotation_col)
 ```
 ## Add the targets into the heatmap expression
 ![avatar](C:\Users\asus1\Desktop\360截图178003067579120.png)
