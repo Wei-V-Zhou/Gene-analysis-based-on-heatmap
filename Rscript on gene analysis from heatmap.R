@@ -21,10 +21,10 @@ if(T){
   library(gdata)
   library(gplots)
   library(scater)
+  library(export)
   library(ggplot2)
   library(pheatmap)
   library(geneplotter)
-  library(SingleCellExperiment)
 }
 
 # Load variation-stablized RNA-seq data
@@ -70,15 +70,16 @@ if(F){
                "Fn1","Snai1","Snai2","Zeb1","Twist1","Lef1","Ets1","Col1a1","Foxc2","Col4a1")
   vitro.emt <- vitro[which(is.element(rownames(vitro), emt.em2)), ]
 }
-# EMT-related genes choosed from the literature
+# EMT-related genes choosed from the literature and GSEA
 if(T){
   emt.e <- c("Cdh1", "Epcam", "Cldn4", "Krt7", "Krt19", "Esrp1")
-  emt.m <- c("Zeb1", "Col1a1", "Col3a1","Itgb3", "Lef1", "Vim")
+  emt.m <- c("Zeb1", "Lef1", "Vim", "Cfp", "Csf1r", "Dab2", "Fcgr2b","Snx20", "Spi1")
+  # emt.m <- c("Zeb1", "Col1a1", "Col3a1","Itgb3", "Lef1", "Vim", "Angptl2", "Aox1")
   # emt.group <- c("Cd19", "Cd68", "Ly6g")
   emt.tg1 <- c("Htra1")
   emt.tg2 <- c("Sdc4")
   emt.tg3 <- c("Jag1")
-  emt.em <- c(emt.e, emt.m, emt.tg3)
+  emt.em <- c(emt.e, emt.m)
   vitro.emt <- vitro[which(is.element(rownames(vitro), emt.em)), ]
 }
 
@@ -86,11 +87,11 @@ if(T){
 vitro.data <- rbind(vitro.emt, t(ann))
 colnames(vitro.data) <- vitro.data[nrow(vitro.data), ]
 {
-  emt.CL <- as.matrix(vitro.data[,colnames(vitro.data)=="CellLine"])
-  emt.PT <- as.matrix(vitro.data[,colnames(vitro.data)=="PrimaryTumor"])
-  emt.D4 <- as.matrix(vitro.data[,colnames(vitro.data)=="BoneMet_D4"])
-  emt.D10 <- as.matrix(vitro.data[,colnames(vitro.data)=="BoneMet_D10"])
-  emt.D16 <- as.matrix(vitro.data[,colnames(vitro.data)=="BoneMet_D16"])
+  emt.CL <- as.matrix(vitro.data[ , colnames(vitro.data)=="CellLine"])
+  emt.PT <- as.matrix(vitro.data[ , colnames(vitro.data)=="PrimaryTumor"])
+  emt.D4 <- as.matrix(vitro.data[ , colnames(vitro.data)=="BoneMet_D4"])
+  emt.D10 <- as.matrix(vitro.data[ , colnames(vitro.data)=="BoneMet_D10"])
+  emt.D16 <- as.matrix(vitro.data[ , colnames(vitro.data)=="BoneMet_D16"])
 }
 {
   colnames(emt.CL) <- emt.CL[(nrow(emt.CL)-1), ]
@@ -104,6 +105,278 @@ colnames(vitro.data) <- vitro.data[nrow(vitro.data), ]
   colnames(emt.D16) <- emt.D16[(nrow(emt.D16)-1), ]
   emt.D16.1 <- emt.D16[c(-nrow(emt.D16),-(nrow(emt.D16)-1)), ]
 }
+
+# Compare the PrimaryTumor, D4 and D16
+if(T){
+  emt.PT_D4_D16 <- as.matrix(cbind(emt.PT.1, emt.D4.1, emt.D16.1))
+  PT_D4_D16 <- apply(emt.PT_D4_D16, 2, as.numeric)
+  row.names(PT_D4_D16) <- row.names(emt.PT_D4_D16)
+  anno <- vitro.ann[colnames(PT_D4_D16), ]
+  annotation_col = data.frame(anno$CellType)
+  row.names(annotation_col) <- anno[ , 1]
+  colnames(annotation_col) <- "Species"
+  
+  # B cell cluster
+  {
+    rm(vitro.emt, vitro.data)
+    emt.group <- "Cd19"
+    vitro.emt <- vitro[which(is.element(rownames(vitro), emt.group)), ]
+    # Choose the corresponding datasets to analyse
+    vitro.data <- rbind(vitro.emt, t(ann))
+    colnames(vitro.data) <- vitro.data[nrow(vitro.data), ]
+    {
+      emt.CL <- as.matrix(vitro.data[ , colnames(vitro.data)=="CellLine"])
+      emt.PT <- as.matrix(vitro.data[ , colnames(vitro.data)=="PrimaryTumor"])
+      emt.D4 <- as.matrix(vitro.data[ , colnames(vitro.data)=="BoneMet_D4"])
+      emt.D10 <- as.matrix(vitro.data[ , colnames(vitro.data)=="BoneMet_D10"])
+      emt.D16 <- as.matrix(vitro.data[ , colnames(vitro.data)=="BoneMet_D16"])
+    }
+    {
+      colnames(emt.CL) <- emt.CL[(nrow(emt.CL)-1), ]
+      emt.CL.1 <- emt.CL[c(-nrow(emt.CL),-(nrow(emt.CL)-1)), ]
+      colnames(emt.PT) <- emt.PT[(nrow(emt.PT)-1), ]
+      emt.PT.1 <- emt.PT[c(-nrow(emt.PT),-(nrow(emt.PT)-1)), ]
+      colnames(emt.D4) <- emt.D4[(nrow(emt.D4)-1), ]
+      emt.D4.1 <- emt.D4[c(-nrow(emt.D4),-(nrow(emt.D4)-1)), ]
+      colnames(emt.D10) <- emt.D10[(nrow(emt.D10)-1), ]
+      emt.D10.1 <- emt.D10[c(-nrow(emt.D10),-(nrow(emt.D10)-1)), ]
+      colnames(emt.D16) <- emt.D16[(nrow(emt.D16)-1), ]
+      emt.D16.1 <- emt.D16[c(-nrow(emt.D16),-(nrow(emt.D16)-1)), ]
+    }
+  }
+  Cd19.PT_D4_D16 <- t(c(emt.PT.1, emt.D4.1, emt.D16.1))
+  row.names(Cd19.PT_D4_D16) <- emt.group
+  anno <- vitro.ann[colnames(PT_D4_D16), ]
+  anno$CellType <- "Cd19"
+  anno_Cd19 <- colnames(Cd19.PT_D4_D16)[Cd19.PT_D4_D16 < 0]
+  anno_df <- data.frame(anno)
+  anno_df[anno_Cd19, 2] = "Others"
+  annotation_col_Cd19 = data.frame(factor(anno_df$CellType))
+  row.names(annotation_col_Cd19) <- anno_df[ , 1]
+  colnames(annotation_col_Cd19) <- "Cd19"
+  
+  # Macrophage cluster
+  {
+    rm(vitro.emt, vitro.data)
+    emt.group <- "Cd68"
+    vitro.emt <- vitro[which(is.element(rownames(vitro), emt.group)), ]
+    # Choose the corresponding datasets to analyse
+    vitro.data <- rbind(vitro.emt, t(ann))
+    colnames(vitro.data) <- vitro.data[nrow(vitro.data), ]
+    {
+      emt.CL <- as.matrix(vitro.data[ , colnames(vitro.data)=="CellLine"])
+      emt.PT <- as.matrix(vitro.data[ , colnames(vitro.data)=="PrimaryTumor"])
+      emt.D4 <- as.matrix(vitro.data[ , colnames(vitro.data)=="BoneMet_D4"])
+      emt.D10 <- as.matrix(vitro.data[ , colnames(vitro.data)=="BoneMet_D10"])
+      emt.D16 <- as.matrix(vitro.data[ , colnames(vitro.data)=="BoneMet_D16"])
+    }
+    {
+      colnames(emt.CL) <- emt.CL[(nrow(emt.CL)-1), ]
+      emt.CL.1 <- emt.CL[c(-nrow(emt.CL),-(nrow(emt.CL)-1)), ]
+      colnames(emt.PT) <- emt.PT[(nrow(emt.PT)-1), ]
+      emt.PT.1 <- emt.PT[c(-nrow(emt.PT),-(nrow(emt.PT)-1)), ]
+      colnames(emt.D4) <- emt.D4[(nrow(emt.D4)-1), ]
+      emt.D4.1 <- emt.D4[c(-nrow(emt.D4),-(nrow(emt.D4)-1)), ]
+      colnames(emt.D10) <- emt.D10[(nrow(emt.D10)-1), ]
+      emt.D10.1 <- emt.D10[c(-nrow(emt.D10),-(nrow(emt.D10)-1)), ]
+      colnames(emt.D16) <- emt.D16[(nrow(emt.D16)-1), ]
+      emt.D16.1 <- emt.D16[c(-nrow(emt.D16),-(nrow(emt.D16)-1)), ]
+    }
+  }
+  Cd68.PT_D4_D16 <- t(c(emt.PT.1, emt.D4.1, emt.D16.1))
+  row.names(Cd68.PT_D4_D16) <- emt.group
+  anno <- vitro.ann[colnames(PT_D4_D16), ]
+  anno$CellType <- "Cd68"
+  anno_Cd68 <- colnames(Cd68.PT_D4_D16)[Cd68.PT_D4_D16 < 0]
+  anno_df <- data.frame(anno)
+  anno_df[anno_Cd68, 2] = "Others"
+  annotation_col_Cd68 = data.frame(factor(anno_df$CellType))
+  row.names(annotation_col_Cd68) <- anno_df[ , 1]
+  colnames(annotation_col_Cd68) <- "Cd68"
+  
+  # Neutrophil cluster
+  {
+    rm(vitro.emt, vitro.data)
+    emt.group <- "Ly6g"
+    vitro.emt <- vitro[which(is.element(rownames(vitro), emt.group)), ]
+    # Choose the corresponding datasets to analyse
+    vitro.data <- rbind(vitro.emt, t(ann))
+    colnames(vitro.data) <- vitro.data[nrow(vitro.data), ]
+    {
+      emt.CL <- as.matrix(vitro.data[ , colnames(vitro.data)=="CellLine"])
+      emt.PT <- as.matrix(vitro.data[ , colnames(vitro.data)=="PrimaryTumor"])
+      emt.D4 <- as.matrix(vitro.data[ , colnames(vitro.data)=="BoneMet_D4"])
+      emt.D10 <- as.matrix(vitro.data[ , colnames(vitro.data)=="BoneMet_D10"])
+      emt.D16 <- as.matrix(vitro.data[ , colnames(vitro.data)=="BoneMet_D16"])
+    }
+    {
+      colnames(emt.CL) <- emt.CL[(nrow(emt.CL)-1), ]
+      emt.CL.1 <- emt.CL[c(-nrow(emt.CL),-(nrow(emt.CL)-1)), ]
+      colnames(emt.PT) <- emt.PT[(nrow(emt.PT)-1), ]
+      emt.PT.1 <- emt.PT[c(-nrow(emt.PT),-(nrow(emt.PT)-1)), ]
+      colnames(emt.D4) <- emt.D4[(nrow(emt.D4)-1), ]
+      emt.D4.1 <- emt.D4[c(-nrow(emt.D4),-(nrow(emt.D4)-1)), ]
+      colnames(emt.D10) <- emt.D10[(nrow(emt.D10)-1), ]
+      emt.D10.1 <- emt.D10[c(-nrow(emt.D10),-(nrow(emt.D10)-1)), ]
+      colnames(emt.D16) <- emt.D16[(nrow(emt.D16)-1), ]
+      emt.D16.1 <- emt.D16[c(-nrow(emt.D16),-(nrow(emt.D16)-1)), ]
+    }
+  }
+  Ly6g.PT_D4_D16 <- t(c(emt.PT.1, emt.D4.1, emt.D16.1))
+  row.names(Ly6g.PT_D4_D16) <- emt.group
+  anno <- vitro.ann[colnames(PT_D4_D16), ]
+  anno$CellType <- "Ly6g"
+  anno_Ly6g <- colnames(Ly6g.PT_D4_D16)[Ly6g.PT_D4_D16 < 0]
+  anno_df <- data.frame(anno)
+  anno_df[anno_Ly6g, 2] = "Others"
+  annotation_col_Ly6g = data.frame(factor(anno_df$CellType))
+  row.names(annotation_col_Ly6g) <- anno_df[ , 1]
+  colnames(annotation_col_Ly6g) <- "Ly6g"
+  
+  annotat_col = data.frame(c(annotation_col, annotation_col_Cd19,
+                             annotation_col_Cd68, annotation_col_Ly6g))
+  row.names(annotat_col) = anno_df[ , 1]
+  annot_color = list(Species = c(PrimaryTumor = "#82B7FF", BoneMet_D4 = "#FF9289", BoneMet_D16 = "#00D65C"),
+                     Cd19 = c(Cd19 = "red", Others = "white"),
+                     Cd68 = c(Cd68 = "red", Others = "white"),
+                     Ly6g = c(Ly6g = "red", Others = "white"))
+  dev.off()
+  dev.new()
+  pheatmap(PT_D4_D16, treeheight_col = 0, treeheight_row = 0, show_colnames = F, clustering_method="ward.D2",
+           color = colorRampPalette(c("green", "black", "red"))(50), annotation_col = annotat_col, annotation_colors = annot_color)
+  # img=pheatmap(PT_D4_D16, treeheight_col = 30, treeheight_row = 0, show_colnames = F, clustering_method="ward.D2",
+  #            color = colorRampPalette(c("green", "black", "red"))(50), annotation_col = annotation_col)
+  # graph2ppt(x = img, file = "EMT heatmap", width = 830, height = 445)
+}
+
+# Choose the Cd19 groups for annotation colorbar
+{
+  rm(vitro.emt, vitro.data)
+  emt.group <- "Cd19"
+  vitro.emt <- vitro[which(is.element(rownames(vitro), emt.group)), ]
+  # Choose the corresponding datasets to analyse
+  vitro.data <- rbind(vitro.emt, t(ann))
+  colnames(vitro.data) <- vitro.data[nrow(vitro.data), ]
+  {
+    emt.CL <- as.matrix(vitro.data[ , colnames(vitro.data)=="CellLine"])
+    emt.PT <- as.matrix(vitro.data[ , colnames(vitro.data)=="PrimaryTumor"])
+    emt.D4 <- as.matrix(vitro.data[ , colnames(vitro.data)=="BoneMet_D4"])
+    emt.D10 <- as.matrix(vitro.data[ , colnames(vitro.data)=="BoneMet_D10"])
+    emt.D16 <- as.matrix(vitro.data[ , colnames(vitro.data)=="BoneMet_D16"])
+  }
+  {
+    colnames(emt.CL) <- emt.CL[(nrow(emt.CL)-1), ]
+    emt.CL.1 <- emt.CL[c(-nrow(emt.CL),-(nrow(emt.CL)-1)), ]
+    colnames(emt.PT) <- emt.PT[(nrow(emt.PT)-1), ]
+    emt.PT.1 <- emt.PT[c(-nrow(emt.PT),-(nrow(emt.PT)-1)), ]
+    colnames(emt.D4) <- emt.D4[(nrow(emt.D4)-1), ]
+    emt.D4.1 <- emt.D4[c(-nrow(emt.D4),-(nrow(emt.D4)-1)), ]
+    colnames(emt.D10) <- emt.D10[(nrow(emt.D10)-1), ]
+    emt.D10.1 <- emt.D10[c(-nrow(emt.D10),-(nrow(emt.D10)-1)), ]
+    colnames(emt.D16) <- emt.D16[(nrow(emt.D16)-1), ]
+    emt.D16.1 <- emt.D16[c(-nrow(emt.D16),-(nrow(emt.D16)-1)), ]
+  }
+  Cd19.PT_D4_D16 <- t(c(emt.PT.1, emt.D4.1, emt.D16.1))
+  row.names(Cd19.PT_D4_D16) <- emt.group
+  anno <- vitro.ann[colnames(PT_D4_D16), ]
+  anno$CellType <- "Cd19"
+  anno_Cd19 <- colnames(Cd19.PT_D4_D16)[Cd19.PT_D4_D16 < 0]
+  anno_df <- data.frame(anno)
+  anno_df[anno_Cd19, 2] = NA
+  annotation_col = data.frame(anno_df$CellType)
+  # ann_colors = list(CellType = "#7570B3")
+  row.names(annotation_col) <- anno[ , 1]
+  colnames(annotation_col)<-"Species"
+  pheatmap(PT_D4_D16, treeheight_col = 30, treeheight_row = 0, show_colnames = F, clustering_method="ward.D2",
+           color = colorRampPalette(c("green", "black", "red"))(50), annotation_col = annotation_col)
+  
+}
+# Choose the Cd68 groups for annotation colorbar
+{
+  rm(vitro.emt, vitro.data)
+  emt.group <- "Cd68"
+  vitro.emt <- vitro[which(is.element(rownames(vitro), emt.group)), ]
+  # Choose the corresponding datasets to analyse
+  vitro.data <- rbind(vitro.emt, t(ann))
+  colnames(vitro.data) <- vitro.data[nrow(vitro.data), ]
+  {
+    emt.CL <- as.matrix(vitro.data[ , colnames(vitro.data)=="CellLine"])
+    emt.PT <- as.matrix(vitro.data[ , colnames(vitro.data)=="PrimaryTumor"])
+    emt.D4 <- as.matrix(vitro.data[ , colnames(vitro.data)=="BoneMet_D4"])
+    emt.D10 <- as.matrix(vitro.data[ , colnames(vitro.data)=="BoneMet_D10"])
+    emt.D16 <- as.matrix(vitro.data[ , colnames(vitro.data)=="BoneMet_D16"])
+  }
+  {
+    colnames(emt.CL) <- emt.CL[(nrow(emt.CL)-1), ]
+    emt.CL.1 <- emt.CL[c(-nrow(emt.CL),-(nrow(emt.CL)-1)), ]
+    colnames(emt.PT) <- emt.PT[(nrow(emt.PT)-1), ]
+    emt.PT.1 <- emt.PT[c(-nrow(emt.PT),-(nrow(emt.PT)-1)), ]
+    colnames(emt.D4) <- emt.D4[(nrow(emt.D4)-1), ]
+    emt.D4.1 <- emt.D4[c(-nrow(emt.D4),-(nrow(emt.D4)-1)), ]
+    colnames(emt.D10) <- emt.D10[(nrow(emt.D10)-1), ]
+    emt.D10.1 <- emt.D10[c(-nrow(emt.D10),-(nrow(emt.D10)-1)), ]
+    colnames(emt.D16) <- emt.D16[(nrow(emt.D16)-1), ]
+    emt.D16.1 <- emt.D16[c(-nrow(emt.D16),-(nrow(emt.D16)-1)), ]
+  }
+  Cd68.PT_D4_D16 <- t(c(emt.PT.1, emt.D4.1, emt.D16.1))
+  row.names(Cd68.PT_D4_D16) <- emt.group
+  anno <- vitro.ann[colnames(PT_D4_D16), ]
+  anno$CellType <- "Cd68"
+  anno_Cd68 <- colnames(Cd68.PT_D4_D16)[Cd68.PT_D4_D16 < 0]
+  anno_df <- data.frame(anno)
+  anno_df[anno_Cd68, 2] = NA
+  annotation_col = data.frame(anno_df$CellType)
+  row.names(annotation_col) <- anno[ , 1]
+  colnames(annotation_col)<-"Species"
+  pheatmap(PT_D4_D16, treeheight_col = 30, treeheight_row = 0, show_colnames = F, clustering_method="ward.D2",
+           color = colorRampPalette(c("green", "black", "red"))(50), annotation_col = annotation_col)
+  
+}
+# Choose the Ly6g groups for annotation colorbar
+{
+  rm(vitro.emt, vitro.data)
+  emt.group <- "Ly6g"
+  vitro.emt <- vitro[which(is.element(rownames(vitro), emt.group)), ]
+  # Choose the corresponding datasets to analyse
+  vitro.data <- rbind(vitro.emt, t(ann))
+  colnames(vitro.data) <- vitro.data[nrow(vitro.data), ]
+  {
+    emt.CL <- as.matrix(vitro.data[ , colnames(vitro.data)=="CellLine"])
+    emt.PT <- as.matrix(vitro.data[ , colnames(vitro.data)=="PrimaryTumor"])
+    emt.D4 <- as.matrix(vitro.data[ , colnames(vitro.data)=="BoneMet_D4"])
+    emt.D10 <- as.matrix(vitro.data[ , colnames(vitro.data)=="BoneMet_D10"])
+    emt.D16 <- as.matrix(vitro.data[ , colnames(vitro.data)=="BoneMet_D16"])
+  }
+  {
+    colnames(emt.CL) <- emt.CL[(nrow(emt.CL)-1), ]
+    emt.CL.1 <- emt.CL[c(-nrow(emt.CL),-(nrow(emt.CL)-1)), ]
+    colnames(emt.PT) <- emt.PT[(nrow(emt.PT)-1), ]
+    emt.PT.1 <- emt.PT[c(-nrow(emt.PT),-(nrow(emt.PT)-1)), ]
+    colnames(emt.D4) <- emt.D4[(nrow(emt.D4)-1), ]
+    emt.D4.1 <- emt.D4[c(-nrow(emt.D4),-(nrow(emt.D4)-1)), ]
+    colnames(emt.D10) <- emt.D10[(nrow(emt.D10)-1), ]
+    emt.D10.1 <- emt.D10[c(-nrow(emt.D10),-(nrow(emt.D10)-1)), ]
+    colnames(emt.D16) <- emt.D16[(nrow(emt.D16)-1), ]
+    emt.D16.1 <- emt.D16[c(-nrow(emt.D16),-(nrow(emt.D16)-1)), ]
+  }
+  Ly6g.PT_D4_D16 <- t(c(emt.PT.1, emt.D4.1, emt.D16.1))
+  row.names(Ly6g.PT_D4_D16) <- emt.group
+  anno <- vitro.ann[colnames(PT_D4_D16), ]
+  anno$CellType <- "Ly6g"
+  anno_Ly6g <- colnames(Ly6g.PT_D4_D16)[Ly6g.PT_D4_D16 < 0]
+  anno_df <- data.frame(anno)
+  anno_df[anno_Ly6g, 2] = NA
+  annotation_col = data.frame(anno_df$CellType)
+  row.names(annotation_col) <- anno[ , 1]
+  colnames(annotation_col)<-"Species"
+  pheatmap(PT_D4_D16, treeheight_col = 30, treeheight_row = 0, show_colnames = F, clustering_method="ward.D2",
+           color = colorRampPalette(c("green", "black", "red"))(50), annotation_col = annotation_col)
+  
+}
+
+
+
+
 
 # Compare the CellLine and Primary Tumor
 if(T){
@@ -213,8 +486,8 @@ if(T){
   annotation_col = data.frame(anno$CellType)
   row.names(annotation_col) <- anno[ , 1]
   colnames(annotation_col)<-"Species"
-  pheatmap(PT_D4,treeheight_col = 30,treeheight_row = 0,show_colnames = F,clustering_method="ward.D",
-           color = colorRampPalette(c("green", "black", "red"))(50),annotation_col = annotation_col)
+  pheatmap(PT_D4, treeheight_col = 30, treeheight_row = 0, show_colnames = F, clustering_method="ward.D2",
+           color = colorRampPalette(c("green", "black", "red"))(50), annotation_col = annotation_col)
 }
 # Compare the PrimaryTumor and D10
 if(T){
@@ -246,5 +519,5 @@ if(T){
 #       Musician: Resonance  #
 #           Date: 2019/09/06 #
 # Revised author: Resonance  #
-#           Time: 2019/09/10 #
+#           Time: 2019/09/15 #
 #============================#
